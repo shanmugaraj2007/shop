@@ -12,7 +12,7 @@ const Dashboard = () => {
 
   const [companyName, setCompanyName] = useState('Asian Paints');
   const [items, setItems] = useState([]);
-  
+
   // Form State for worker
   const [itemName, setItemName] = useState('');
   const [size, setSize] = useState('1 Liter');
@@ -20,19 +20,38 @@ const Dashboard = () => {
 
   const sizes = ['1 Liter', '4 Liter', '10 Liter', '20 Liter', '50 kg', '8mm', '10mm', '12mm', 'Custom'];
 
+  const [masterItems, setMasterItems] = useState(() => {
+    const saved = localStorage.getItem('kpn_master_items');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showAddMasterModal, setShowAddMasterModal] = useState(false);
+  const [newMasterItemName, setNewMasterItemName] = useState('');
+
+  const handleAddMasterItem = (e) => {
+    e.preventDefault();
+    if(newMasterItemName.trim() && !masterItems.includes(newMasterItemName.trim())) {
+      const updated = [...masterItems, newMasterItemName.trim()];
+      setMasterItems(updated);
+      localStorage.setItem('kpn_master_items', JSON.stringify(updated));
+      setItemName(newMasterItemName.trim());
+      setNewMasterItemName('');
+      setShowAddMasterModal(false);
+    }
+  };
+
   const handleLogout = () => navigate('/login');
 
   const handleAddItem = (e) => {
     e.preventDefault();
     if (!itemName.trim() || !quantity) return;
-    
-    setItems([...items, { 
-      id: Date.now(), 
-      name: itemName, 
-      size: size, 
-      quantity: quantity 
+
+    setItems([...items, {
+      id: Date.now(),
+      name: itemName,
+      size: size,
+      quantity: quantity
     }]);
-    
+
     setItemName('');
     setQuantity('');
     document.getElementById('itemNameInput')?.focus();
@@ -44,14 +63,14 @@ const Dashboard = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(20);
     doc.text('KPN TRADERS - STOCK SUMMARY', 105, 20, { align: 'center' });
-    
+
     doc.setFontSize(12);
     doc.text(`Brand: ${companyName || 'Not Specified'}`, 14, 35);
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 35);
-    
+
     const tableData = items.map((item, index) => [
       index + 1,
       item.name,
@@ -77,10 +96,10 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-page" style={{ background: '#e0e5ec', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
-      
+
       {/* Mobile App Container */}
       <div style={{ width: '100%', maxWidth: '480px', background: '#f5f7fa', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 0 20px rgba(0,0,0,0.1)', minHeight: '100vh' }}>
-        
+
         {/* App Header */}
         <div style={{ background: '#1c4a7e', color: 'white', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', position: 'sticky', top: 0, zIndex: 10 }}>
           <h2 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
@@ -92,7 +111,7 @@ const Dashboard = () => {
         </div>
 
         <div style={{ padding: '15px', paddingBottom: '100px', flex: 1, overflowY: 'auto' }}>
-          
+
           {/* Welcome Banner */}
           <div style={{ marginBottom: '15px', padding: '10px 5px' }}>
             <h3 style={{ margin: 0, color: '#333', fontSize: '16px' }}>Welcome, {role === 'owner' ? 'Owner' : 'Worker'}</h3>
@@ -107,12 +126,12 @@ const Dashboard = () => {
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1, background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', textAlign: 'center', borderLeft: '4px solid #10B981' }}>
                   <Package size={24} color="#10B981" style={{ margin: '0 auto 5px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>450</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>0</div>
                   <div style={{ fontSize: '12px', color: '#666' }}>Total Stock</div>
                 </div>
                 <div style={{ flex: 1, background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', textAlign: 'center', borderLeft: '4px solid #EF4444' }}>
                   <Bell size={24} color="#EF4444" style={{ margin: '0 auto 5px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>2</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>0</div>
                   <div style={{ fontSize: '12px', color: '#666' }}>Low Stock</div>
                 </div>
               </div>
@@ -124,26 +143,8 @@ const Dashboard = () => {
                 </div>
                 <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   
-                  {/* Alert Item 1 */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold', color: '#333', fontSize: '15px' }}>Asian Paints Royale (20L)</div>
-                      <div style={{ color: '#EF4444', fontSize: '13px', marginTop: '2px' }}>Only 5 buckets left in stock</div>
-                    </div>
-                    <button onClick={() => handleOrder('Asian Paints Royale (20L)')} style={{ background: '#4F46E5', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                      <ShoppingCart size={14} /> Order
-                    </button>
-                  </div>
-
-                  {/* Alert Item 2 */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold', color: '#333', fontSize: '15px' }}>UltraTech Cement (50kg)</div>
-                      <div style={{ color: '#EF4444', fontSize: '13px', marginTop: '2px' }}>Only 10 bags left in stock</div>
-                    </div>
-                    <button onClick={() => handleOrder('UltraTech Cement (50kg)')} style={{ background: '#4F46E5', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                      <ShoppingCart size={14} /> Order
-                    </button>
+                  <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+                    No low stock items currently.
                   </div>
 
                 </div>
@@ -155,17 +156,8 @@ const Dashboard = () => {
                   Current Available Stock
                 </div>
                 <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #eee' }}>
-                    <span style={{ color: '#333', fontSize: '14px' }}>Tractor Emulsion (20L)</span>
-                    <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '14px' }}>45 buckets</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #eee' }}>
-                    <span style={{ color: '#333', fontSize: '14px' }}>Tata Steel (12mm)</span>
-                    <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '14px' }}>120 bundles</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#333', fontSize: '14px' }}>Ambuja Cement (50kg)</span>
-                    <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '14px' }}>200 bags</span>
+                  <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+                    Stock is currently zero.
                   </div>
                 </div>
               </div>
@@ -181,12 +173,12 @@ const Dashboard = () => {
                   <label style={{ display: 'block', fontSize: '13px', color: '#666', marginBottom: '5px', fontWeight: 'bold' }}>Brand Name</label>
                   <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #ddd', borderRadius: '8px', padding: '0 10px', background: '#f9f9f9' }}>
                     <Building2 size={16} color="#888" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="e.g. Asian Paints, UltraTech" 
-                      style={{ width: '100%', padding: '10px', border: 'none', background: 'transparent', fontSize: '15px', outline: 'none' }} 
+                      placeholder="e.g. Asian Paints, UltraTech"
+                      style={{ width: '100%', padding: '10px', border: 'none', background: 'transparent', fontSize: '15px', outline: 'none' }}
                     />
                   </div>
                 </div>
@@ -203,20 +195,34 @@ const Dashboard = () => {
                 <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#333', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Add New Item</h3>
                 <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', color: '#666', marginBottom: '5px' }}>Item Name / Description</label>
-                    <input 
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <label style={{ fontSize: '13px', color: '#666', fontWeight: 'bold' }}>Item Name / Description</label>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowAddMasterModal(true)} 
+                        style={{ background: 'transparent', border: 'none', color: '#2980b9', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <Plus size={14} /> Add New
+                      </button>
+                    </div>
+                    <input
                       id="itemNameInput"
-                      type="text" 
+                      type="text"
+                      list="master-items"
                       value={itemName}
                       onChange={(e) => setItemName(e.target.value)}
-                      placeholder="e.g. Royale Play" 
-                      style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', outline: 'none' }} 
+                      placeholder="Type to search or select..."
+                      style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                      autoComplete="off"
                     />
+                    <datalist id="master-items">
+                      {masterItems.map(item => <option key={item} value={item} />)}
+                    </datalist>
                   </div>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '13px', color: '#666', marginBottom: '5px' }}>Size / Variant</label>
-                      <select 
+                      <select
                         value={size}
                         onChange={(e) => setSize(e.target.value)}
                         style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', background: 'white', outline: 'none' }}
@@ -226,12 +232,12 @@ const Dashboard = () => {
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '13px', color: '#666', marginBottom: '5px' }}>Quantity</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
-                        placeholder="Qty" 
-                        style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', outline: 'none' }} 
+                        placeholder="Qty"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
                       />
                     </div>
                   </div>
@@ -279,6 +285,33 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Add Master Item Modal */}
+      {showAddMasterModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Add New Stock Item</h3>
+            <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>Add a new item to your master list so you can select it anytime.</p>
+            <form onSubmit={handleAddMasterItem}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#666', marginBottom: '5px', fontWeight: 'bold' }}>Item Name</label>
+                <input 
+                  type="text" 
+                  value={newMasterItemName}
+                  onChange={(e) => setNewMasterItemName(e.target.value)}
+                  placeholder="e.g. Asian Paints Royale" 
+                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', outline: 'none' }} 
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="button" onClick={() => setShowAddMasterModal(false)} style={{ flex: 1, padding: '12px', background: '#eee', color: '#333', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '12px', background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Save Item</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

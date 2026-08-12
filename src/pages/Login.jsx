@@ -5,39 +5,52 @@ import ScannerModal from '../components/ScannerModal';
 import './Login.css';
 
 const Login = () => {
+  const [isLogin, setIsLogin] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
   const [role, setRole] = useState('worker');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleScanSuccess = (decodedText) => {
-    // In a real app, this would be an API call to verify the token
     console.log(`Scan result: ${decodedText}`);
     setShowScanner(false);
-    // Simulate successful login
     setTimeout(() => {
       navigate('/dashboard', { state: { role } });
     }, 500);
   };
 
-  const handleManualLogin = (e) => {
+  const handleAuth = (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
-    // Basic hardcoded validation for demonstration
-    if (role === 'worker') {
-      if (email === 'worker@kpntraders.com' && password === 'worker123') {
-        navigate('/dashboard', { state: { role } });
+    const users = JSON.parse(localStorage.getItem('users')) || {
+      'worker@kpntraders.com': { password: 'worker123', role: 'worker' },
+      'owner@kpntraders.com': { password: 'owner123', role: 'owner' }
+    };
+
+    if (isLogin) {
+      // Login logic
+      const user = users[email];
+      if (user && user.password === password && user.role === role) {
+        navigate('/dashboard', { state: { role: user.role } });
       } else {
-        setError('Invalid Worker Email or Password! (Hint: worker@kpntraders.com / worker123)');
+        setError('Invalid Email, Password or Role mismatch!');
       }
-    } else if (role === 'owner') {
-      if (email === 'owner@kpntraders.com' && password === 'owner123') {
-        navigate('/dashboard', { state: { role } });
+    } else {
+      // Sign Up logic
+      if (users[email]) {
+        setError('Email already exists. Please login.');
       } else {
-        setError('Invalid Owner Email or Password! (Hint: owner@kpntraders.com / owner123)');
+        users[email] = { password, role };
+        localStorage.setItem('users', JSON.stringify(users));
+        setSuccess('Account created successfully! You can now login.');
+        setIsLogin(true);
+        setEmail('');
+        setPassword('');
       }
     }
   };
@@ -53,11 +66,30 @@ const Login = () => {
       </div>
 
       <div className="login-content">
+        <div className="auth-toggle" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', gap: '10px' }}>
+          <button 
+            type="button" 
+            className={`btn ${isLogin ? 'btn-primary' : 'btn-secondary'}`} 
+            style={{ padding: '8px 16px', borderRadius: '20px' }}
+            onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
+          >
+            Login
+          </button>
+          <button 
+            type="button" 
+            className={`btn ${!isLogin ? 'btn-primary' : 'btn-secondary'}`} 
+            style={{ padding: '8px 16px', borderRadius: '20px' }}
+            onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
+          >
+            Sign Up
+          </button>
+        </div>
+
         <div className="role-selection" style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
           <button 
             type="button" 
             className={`btn ${role === 'worker' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', borderRadius: '20px' }}
+            style={{ padding: '8px 16px', borderRadius: '20px', flex: 1 }}
             onClick={() => { setRole('worker'); setError(''); }}
           >
             Worker
@@ -65,27 +97,34 @@ const Login = () => {
           <button 
             type="button" 
             className={`btn ${role === 'owner' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', borderRadius: '20px' }}
+            style={{ padding: '8px 16px', borderRadius: '20px', flex: 1 }}
             onClick={() => { setRole('owner'); setError(''); }}
           >
             Owner
           </button>
         </div>
 
-        <button 
-          className="btn btn-primary qr-login-btn"
-          onClick={() => setShowScanner(true)}
-        >
-          <QrCode size={20} style={{ marginRight: '8px' }} />
-          Scan QR to Login as {role === 'worker' ? 'Worker' : 'Owner'}
-        </button>
+        {isLogin && (
+          <button 
+            className="btn btn-primary qr-login-btn"
+            onClick={() => setShowScanner(true)}
+            style={{ width: '100%', marginBottom: '20px' }}
+          >
+            <QrCode size={20} style={{ marginRight: '8px' }} />
+            Scan QR to Login as {role === 'worker' ? 'Worker' : 'Owner'}
+          </button>
+        )}
 
-        <div className="divider">
-          <span>OR</span>
-        </div>
+        {isLogin && (
+          <div className="divider">
+            <span>OR</span>
+          </div>
+        )}
 
-        <form className="login-form" onSubmit={handleManualLogin}>
+        <form className="login-form" onSubmit={handleAuth}>
           {error && <div style={{ color: '#e74c3c', fontSize: '13px', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold' }}>{error}</div>}
+          {success && <div style={{ color: '#2ecc71', fontSize: '13px', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold' }}>{success}</div>}
+          
           <div className="input-group">
             <Mail className="input-icon" size={20} />
             <input 
@@ -108,8 +147,8 @@ const Login = () => {
               required 
             />
           </div>
-          <button type="submit" className="btn btn-secondary login-btn">
-            Login Manually
+          <button type="submit" className="btn btn-secondary login-btn" style={{ width: '100%', marginTop: '10px' }}>
+            {isLogin ? 'Login Manually' : 'Create Account'}
             <ArrowRight size={18} style={{ marginLeft: '8px' }} />
           </button>
         </form>
