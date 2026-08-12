@@ -20,9 +20,21 @@ const Dashboard = () => {
 
   const sizes = ['1 Liter', '4 Liter', '10 Liter', '20 Liter', '50 kg', '8mm', '10mm', '12mm', 'Custom'];
 
+  const defaultItems = [
+    'APEX WHITE', 'AB2', 'AB6', 'AB11', 'AB12', 'AB17C', 'AB21G',
+    'APEX RED', 'APEX MARRON', 'ULTIMA WHITE', 'HQ2N', 'HQ10N',
+    'HQ13', 'HQ16N', 'HQ17', 'HQ20N', 'ULTIMA SILVER', 'ULTIMA GOLD',
+    'ACE WHITE', 'AC2G', 'AC9G', 'AC17G', 'AC21G'
+  ];
+
   const [masterItems, setMasterItems] = useState(() => {
     const saved = localStorage.getItem('kpn_master_items');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure the default items are always available, even if localStorage has data
+      return [...new Set([...defaultItems, ...parsed])];
+    }
+    return defaultItems;
   });
   const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const [newMasterItemName, setNewMasterItemName] = useState('');
