@@ -25,7 +25,7 @@ const Login = () => {
         <div className="logo-circle">
           <QrCode size={40} color="white" />
         </div>
-        <h1>Smart Inventory</h1>
+        <h1>KPN TRADERS</h1>
         <p>Manage your stock seamlessly.</p>
       </div>
 
