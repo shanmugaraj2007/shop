@@ -7,6 +7,9 @@ import './Login.css';
 const Login = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [role, setRole] = useState('worker');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleScanSuccess = (decodedText) => {
@@ -17,6 +20,26 @@ const Login = () => {
     setTimeout(() => {
       navigate('/dashboard', { state: { role } });
     }, 500);
+  };
+
+  const handleManualLogin = (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Basic hardcoded validation for demonstration
+    if (role === 'worker') {
+      if (email === 'worker@kpntraders.com' && password === 'worker123') {
+        navigate('/dashboard', { state: { role } });
+      } else {
+        setError('Invalid Worker Email or Password! (Hint: worker@kpntraders.com / worker123)');
+      }
+    } else if (role === 'owner') {
+      if (email === 'owner@kpntraders.com' && password === 'owner123') {
+        navigate('/dashboard', { state: { role } });
+      } else {
+        setError('Invalid Owner Email or Password! (Hint: owner@kpntraders.com / owner123)');
+      }
+    }
   };
 
   return (
@@ -35,7 +58,7 @@ const Login = () => {
             type="button" 
             className={`btn ${role === 'worker' ? 'btn-primary' : 'btn-secondary'}`} 
             style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => setRole('worker')}
+            onClick={() => { setRole('worker'); setError(''); }}
           >
             Worker
           </button>
@@ -43,7 +66,7 @@ const Login = () => {
             type="button" 
             className={`btn ${role === 'owner' ? 'btn-primary' : 'btn-secondary'}`} 
             style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => setRole('owner')}
+            onClick={() => { setRole('owner'); setError(''); }}
           >
             Owner
           </button>
@@ -61,14 +84,29 @@ const Login = () => {
           <span>OR</span>
         </div>
 
-        <form className="login-form" onSubmit={(e) => { e.preventDefault(); navigate('/dashboard', { state: { role } }); }}>
+        <form className="login-form" onSubmit={handleManualLogin}>
+          {error && <div style={{ color: '#e74c3c', fontSize: '13px', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold' }}>{error}</div>}
           <div className="input-group">
             <Mail className="input-icon" size={20} />
-            <input type="email" placeholder="Email Address" className="input-field with-icon" required />
+            <input 
+              type="email" 
+              placeholder="Email Address" 
+              className="input-field with-icon" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
           </div>
           <div className="input-group">
             <Lock className="input-icon" size={20} />
-            <input type="password" placeholder="Password" className="input-field with-icon" required />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              className="input-field with-icon" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+            />
           </div>
           <button type="submit" className="btn btn-secondary login-btn">
             Login Manually
