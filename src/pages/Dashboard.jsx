@@ -13,6 +13,7 @@ const Dashboard = () => {
 
   const [companyName, setCompanyName] = useState('Asian Paints');
   const [items, setItems] = useState([]);
+  const [sessionItems, setSessionItems] = useState([]); // Tracks items added in the current session/voucher
 
   // Form State for worker
   const [itemName, setItemName] = useState('');
@@ -54,15 +55,17 @@ const Dashboard = () => {
     e.preventDefault();
     if (!itemName.trim() || !quantity) return;
 
-    const newItems = [...items, {
+    const newItem = {
       id: Date.now(),
       name: itemName,
       size: size,
       quantity: quantity
-    }];
+    };
 
+    const newItems = [...items, newItem];
     setItems(newItems);
     await DatabaseService.saveStockItems(newItems);
+    setSessionItems([...sessionItems, newItem]);
 
     setItemName('');
     setQuantity('');
@@ -73,6 +76,7 @@ const Dashboard = () => {
     const updated = items.filter(item => item.id !== id);
     setItems(updated);
     await DatabaseService.saveStockItems(updated);
+    setSessionItems(sessionItems.filter(item => item.id !== id));
   };
 
   const downloadPDF = () => {
@@ -85,7 +89,9 @@ const Dashboard = () => {
     doc.text(`Brand: ${companyName || 'Not Specified'}`, 14, 35);
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 35);
 
-    const tableData = items.map((item, index) => [
+    const targetItems = role === 'worker' ? sessionItems : items;
+
+    const tableData = targetItems.map((item, index) => [
       index + 1,
       item.name,
       item.size,
@@ -102,6 +108,11 @@ const Dashboard = () => {
     });
 
     doc.save(`KPN_Traders_${companyName || 'Stock'}.pdf`);
+  };
+
+  const completeDocument = () => {
+    downloadPDF();
+    setSessionItems([]);
   };
 
   const handleOrder = (item) => {
@@ -295,11 +306,11 @@ const Dashboard = () => {
               </div>
 
               {/* Mobile List View (replaces table) */}
-              {items.length > 0 && (
+              {sessionItems.length > 0 && (
                 <div>
-                  <h3 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#666', paddingLeft: '5px' }}>Added Items ({items.length})</h3>
+                  <h3 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#666', paddingLeft: '5px' }}>Added Items ({sessionItems.length})</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {items.map((item, index) => (
+                    {sessionItems.map((item, index) => (
                       <div key={item.id} style={{ background: '#fff', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', borderLeft: '4px solid #2980b9' }}>
                         <div style={{ background: '#eef', color: '#2980b9', width: '24px', height: '24px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginRight: '12px' }}>
                           {index + 1}
@@ -324,10 +335,13 @@ const Dashboard = () => {
         </div>
 
         {/* Fixed Bottom Action Bar for Worker */}
-        {role === 'worker' && items.length > 0 && (
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', padding: '15px', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', borderTop: '1px solid #eee' }}>
-            <button onClick={downloadPDF} style={{ width: '100%', background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-              <Download size={22} /> Download PDF Report
+        {role === 'worker' && sessionItems.length > 0 && (
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', padding: '15px', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
+            <button onClick={downloadPDF} style={{ flex: 1, background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Download size={20} /> Download PDF
+            </button>
+            <button onClick={completeDocument} style={{ flex: 1, background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <FileText size={20} /> Complete
             </button>
           </div>
         )}

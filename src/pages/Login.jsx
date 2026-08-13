@@ -7,7 +7,7 @@ import './Login.css';
 import { DatabaseService } from '../services/db';
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'forgot'
   const [showScanner, setShowScanner] = useState(false);
   const [role, setRole] = useState('worker');
   const [email, setEmail] = useState('');
@@ -32,7 +32,7 @@ const Login = () => {
     try {
       const users = await DatabaseService.getUsers();
 
-      if (isLogin) {
+      if (authMode === 'login') {
         // Login logic
         const user = users[email];
         if (user && user.password === password && user.role === role) {
@@ -40,15 +40,26 @@ const Login = () => {
         } else {
           setError('Invalid Email, Password or Role mismatch!');
         }
-      } else {
+      } else if (authMode === 'signup') {
         // Sign Up logic
         if (users[email]) {
-          setError('Email already exists. Please login.');
+          setError('Email already registered. Please login.');
         } else {
           await DatabaseService.saveUser(email, { password, role });
           setSuccess('Account created successfully! You can now login.');
-          setIsLogin(true);
-          setEmail('');
+          setAuthMode('login');
+          setPassword('');
+        }
+      } else if (authMode === 'forgot') {
+        // Forgot Password logic
+        if (!users[email]) {
+          setError('Email not found. Please register first.');
+        } else {
+          // Update password keeping the same role
+          const userRole = users[email].role;
+          await DatabaseService.saveUser(email, { password, role: userRole });
+          setSuccess('Password updated successfully! You can now login.');
+          setAuthMode('login');
           setPassword('');
         }
       }
@@ -71,17 +82,17 @@ const Login = () => {
         <div className="auth-toggle" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', gap: '10px' }}>
           <button 
             type="button" 
-            className={`btn ${isLogin ? 'btn-primary' : 'btn-secondary'}`} 
+            className={`btn ${authMode === 'login' ? 'btn-primary' : 'btn-secondary'}`} 
             style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
+            onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); }}
           >
             Login
           </button>
           <button 
             type="button" 
-            className={`btn ${!isLogin ? 'btn-primary' : 'btn-secondary'}`} 
+            className={`btn ${authMode === 'signup' ? 'btn-primary' : 'btn-secondary'}`} 
             style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
+            onClick={() => { setAuthMode('signup'); setError(''); setSuccess(''); }}
           >
             Sign Up
           </button>
@@ -106,7 +117,7 @@ const Login = () => {
           </button>
         </div>
 
-        {isLogin && (
+        {authMode === 'login' && (
           <button 
             className="btn btn-primary qr-login-btn"
             onClick={() => setShowScanner(true)}
@@ -117,7 +128,7 @@ const Login = () => {
           </button>
         )}
 
-        {isLogin && (
+        {authMode === 'login' && (
           <div className="divider">
             <span>OR</span>
           </div>
@@ -142,15 +153,28 @@ const Login = () => {
             <Lock className="input-icon" size={20} />
             <input 
               type="password" 
-              placeholder="Password" 
+              placeholder={authMode === 'forgot' ? "New Password" : "Password"} 
               className="input-field with-icon" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required 
             />
           </div>
+
+          {authMode === 'login' && (
+            <div style={{ textAlign: 'right', marginBottom: '15px' }}>
+              <button 
+                type="button" 
+                onClick={() => { setAuthMode('forgot'); setError(''); setSuccess(''); }}
+                style={{ background: 'none', border: 'none', color: '#3498db', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+
           <button type="submit" className="btn btn-secondary login-btn" style={{ width: '100%', marginTop: '10px' }}>
-            {isLogin ? 'Login Manually' : 'Create Account'}
+            {authMode === 'login' ? 'Login Manually' : authMode === 'signup' ? 'Create Account' : 'Reset Password'}
             <ArrowRight size={18} style={{ marginLeft: '8px' }} />
           </button>
         </form>
