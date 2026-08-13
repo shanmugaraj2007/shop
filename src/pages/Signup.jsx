@@ -1,0 +1,92 @@
+import React, { useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Mail, Lock, ArrowRight, UserPlus } from 'lucide-react';
+import { DatabaseService } from '../services/db';
+import './Login.css';
+
+const Signup = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const role = location.state?.role || 'worker';
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    
+    try {
+      const users = await DatabaseService.getUsers();
+      if (users[email]) {
+        setError('Email already registered. Please login.');
+      } else {
+        await DatabaseService.saveUser(email, { password, role });
+        setSuccess('Account created successfully! Redirecting...');
+        setTimeout(() => {
+          navigate('/login', { state: { role } });
+        }, 1500);
+      }
+    } catch (err) {
+      setError('Database error: Unable to create account.');
+    }
+  };
+
+  return (
+    <div className="login-page animate-fade-in">
+      <div className="login-hero">
+        <div className="logo-circle">
+          <UserPlus size={40} color="white" />
+        </div>
+        <h1>Create Account</h1>
+        <p>Register as {role === 'worker' ? 'Staff' : 'Owner'}</p>
+      </div>
+
+      <div className="login-content">
+        <form className="login-form" onSubmit={handleSignup}>
+          {error && <div style={{ color: '#e74c3c', fontSize: '13px', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold' }}>{error}</div>}
+          {success && <div style={{ color: '#2ecc71', fontSize: '13px', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold' }}>{success}</div>}
+          
+          <div className="input-group">
+            <Mail className="input-icon" size={20} />
+            <input 
+              type="email" 
+              placeholder="Email Address" 
+              className="input-field with-icon" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
+          </div>
+          <div className="input-group">
+            <Lock className="input-icon" size={20} />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              className="input-field with-icon" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary login-btn" style={{ width: '100%', marginTop: '10px' }}>
+            Sign Up
+            <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+          </button>
+          
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <Link to="/login" state={{ role }} style={{ color: '#3498db', fontSize: '14px', textDecoration: 'none', fontWeight: 'bold' }}>
+              Already have an account? Sign In
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default Signup;

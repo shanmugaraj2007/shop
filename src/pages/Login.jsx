@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { QrCode, Mail, Lock, ArrowRight } from 'lucide-react';
 import ScannerModal from '../components/ScannerModal';
 import './Login.css';
@@ -7,9 +7,10 @@ import './Login.css';
 import { DatabaseService } from '../services/db';
 
 const Login = () => {
-  const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'forgot'
+  const [authMode, setAuthMode] = useState('login'); // 'login', 'forgot'
   const [showScanner, setShowScanner] = useState(false);
-  const [role, setRole] = useState('worker');
+  const location = useLocation();
+  const role = location.state?.role || 'worker';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,16 +42,7 @@ const Login = () => {
         } else {
           setError('Invalid Email, Password or Role mismatch!');
         }
-      } else if (authMode === 'signup') {
-        // Sign Up logic
-        if (users[email]) {
-          setError('Email already registered. Please login.');
-        } else {
-          await DatabaseService.saveUser(email, { password, role });
-          setSuccess('Account created successfully! You can now login.');
-          setAuthMode('login');
-          setPassword('');
-        }
+
       } else if (authMode === 'forgot') {
         if (forgotStep === 1) {
           if (!users[email]) {
@@ -86,44 +78,6 @@ const Login = () => {
       </div>
 
       <div className="login-content">
-        <div className="auth-toggle" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', gap: '10px' }}>
-          <button 
-            type="button" 
-            className={`btn ${authMode === 'login' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); setForgotStep(1); }}
-          >
-            Login
-          </button>
-          <button 
-            type="button" 
-            className={`btn ${authMode === 'signup' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => { setAuthMode('signup'); setError(''); setSuccess(''); setForgotStep(1); }}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        <div className="role-selection" style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
-          <button 
-            type="button" 
-            className={`btn ${role === 'worker' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', borderRadius: '20px', flex: 1 }}
-            onClick={() => { setRole('worker'); setError(''); }}
-          >
-            Worker
-          </button>
-          <button 
-            type="button" 
-            className={`btn ${role === 'owner' ? 'btn-primary' : 'btn-secondary'}`} 
-            style={{ padding: '8px 16px', borderRadius: '20px', flex: 1 }}
-            onClick={() => { setRole('owner'); setError(''); }}
-          >
-            Owner
-          </button>
-        </div>
-
 
 
         <form className="login-form" onSubmit={handleAuth}>
@@ -169,9 +123,28 @@ const Login = () => {
           )}
 
           <button type="submit" className="btn btn-secondary login-btn" style={{ width: '100%', marginTop: '10px' }}>
-            {authMode === 'login' ? 'Login Manually' : authMode === 'signup' ? 'Create Account' : (authMode === 'forgot' && forgotStep === 1) ? 'Verify Email' : 'Change Password'}
+            {authMode === 'login' ? 'Login Manually' : (authMode === 'forgot' && forgotStep === 1) ? 'Verify Email' : 'Change Password'}
             <ArrowRight size={18} style={{ marginLeft: '8px' }} />
           </button>
+
+          {authMode === 'login' && (
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              <Link to="/signup" state={{ role }} style={{ color: '#3498db', fontSize: '14px', textDecoration: 'none', fontWeight: 'bold' }}>
+                Don't have an account? Create one
+              </Link>
+            </div>
+          )}
+          {authMode === 'forgot' && (
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              <button 
+                type="button" 
+                onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); }}
+                style={{ background: 'none', border: 'none', color: '#3498db', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Back to Login
+              </button>
+            </div>
+          )}
         </form>
       </div>
 
