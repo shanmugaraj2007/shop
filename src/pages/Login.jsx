@@ -14,6 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [forgotStep, setForgotStep] = useState(1); // 1: Email, 2: New Password
   const navigate = useNavigate();
 
   const handleScanSuccess = (decodedText) => {
@@ -51,15 +52,21 @@ const Login = () => {
           setPassword('');
         }
       } else if (authMode === 'forgot') {
-        // Forgot Password logic
-        if (!users[email]) {
-          setError('Email not found. Please register first.');
+        if (forgotStep === 1) {
+          if (!users[email]) {
+            setError('Email not found. Please register first.');
+          } else {
+            setSuccess(`Email ${email} verified. Please enter a new password.`);
+            setForgotStep(2);
+          }
+          return;
         } else {
           // Update password keeping the same role
           const userRole = users[email].role;
           await DatabaseService.saveUser(email, { password, role: userRole });
           setSuccess('Password updated successfully! You can now login.');
           setAuthMode('login');
+          setForgotStep(1);
           setPassword('');
         }
       }
@@ -84,7 +91,7 @@ const Login = () => {
             type="button" 
             className={`btn ${authMode === 'login' ? 'btn-primary' : 'btn-secondary'}`} 
             style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); }}
+            onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); setForgotStep(1); }}
           >
             Login
           </button>
@@ -92,7 +99,7 @@ const Login = () => {
             type="button" 
             className={`btn ${authMode === 'signup' ? 'btn-primary' : 'btn-secondary'}`} 
             style={{ padding: '8px 16px', borderRadius: '20px' }}
-            onClick={() => { setAuthMode('signup'); setError(''); setSuccess(''); }}
+            onClick={() => { setAuthMode('signup'); setError(''); setSuccess(''); setForgotStep(1); }}
           >
             Sign Up
           </button>
@@ -131,26 +138,29 @@ const Login = () => {
               className="input-field with-icon" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={authMode === 'forgot' && forgotStep === 2}
               required 
             />
           </div>
-          <div className="input-group">
-            <Lock className="input-icon" size={20} />
-            <input 
-              type="password" 
-              placeholder={authMode === 'forgot' ? "New Password" : "Password"} 
-              className="input-field with-icon" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
-          </div>
+          {!(authMode === 'forgot' && forgotStep === 1) && (
+            <div className="input-group">
+              <Lock className="input-icon" size={20} />
+              <input 
+                type="password" 
+                placeholder={authMode === 'forgot' ? "New Password" : "Password"} 
+                className="input-field with-icon" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+              />
+            </div>
+          )}
 
           {authMode === 'login' && (
             <div style={{ textAlign: 'right', marginBottom: '15px' }}>
               <button 
                 type="button" 
-                onClick={() => { setAuthMode('forgot'); setError(''); setSuccess(''); }}
+                onClick={() => { setAuthMode('forgot'); setError(''); setSuccess(''); setForgotStep(1); }}
                 style={{ background: 'none', border: 'none', color: '#3498db', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 Forgot Password?
@@ -159,7 +169,7 @@ const Login = () => {
           )}
 
           <button type="submit" className="btn btn-secondary login-btn" style={{ width: '100%', marginTop: '10px' }}>
-            {authMode === 'login' ? 'Login Manually' : authMode === 'signup' ? 'Create Account' : 'Reset Password'}
+            {authMode === 'login' ? 'Login Manually' : authMode === 'signup' ? 'Create Account' : (authMode === 'forgot' && forgotStep === 1) ? 'Verify Email' : 'Change Password'}
             <ArrowRight size={18} style={{ marginLeft: '8px' }} />
           </button>
         </form>
