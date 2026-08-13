@@ -117,22 +117,7 @@ const Login = () => {
           </button>
         </div>
 
-        {authMode === 'login' && (
-          <button 
-            className="btn btn-primary qr-login-btn"
-            onClick={() => setShowScanner(true)}
-            style={{ width: '100%', marginBottom: '20px' }}
-          >
-            <QrCode size={20} style={{ marginRight: '8px' }} />
-            Scan QR to Login as {role === 'worker' ? 'Worker' : 'Owner'}
-          </button>
-        )}
 
-        {authMode === 'login' && (
-          <div className="divider">
-            <span>OR</span>
-          </div>
-        )}
 
         <form className="login-form" onSubmit={handleAuth}>
           {error && <div style={{ color: '#e74c3c', fontSize: '13px', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold' }}>{error}</div>}
