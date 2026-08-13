@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Plus, Download, Trash2, FileText, Building2, Package, Bell, ShoppingCart } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { DatabaseService } from '../services/db';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -20,31 +21,27 @@ const Dashboard = () => {
 
   const sizes = ['1 Liter', '4 Liter', '10 Liter', '20 Liter', '50 kg', '8mm', '10mm', '12mm', 'Custom'];
 
-  const defaultItems = [
-    'APEX WHITE', 'AB2', 'AB6', 'AB11', 'AB12', 'AB17C', 'AB21G',
-    'APEX RED', 'APEX MARRON', 'ULTIMA WHITE', 'HQ2N', 'HQ10N',
-    'HQ13', 'HQ16N', 'HQ17', 'HQ20N', 'ULTIMA SILVER', 'ULTIMA GOLD',
-    'ACE WHITE', 'AC2G', 'AC9G', 'AC17G', 'AC21G'
-  ];
-
-  const [masterItems, setMasterItems] = useState(() => {
-    const saved = localStorage.getItem('kpn_master_items');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Ensure the default items are always available, even if localStorage has data
-      return [...new Set([...defaultItems, ...parsed])];
-    }
-    return defaultItems;
-  });
+  const [masterItems, setMasterItems] = useState([]);
   const [showAddMasterModal, setShowAddMasterModal] = useState(false);
   const [newMasterItemName, setNewMasterItemName] = useState('');
 
-  const handleAddMasterItem = (e) => {
+  useEffect(() => {
+    // Load database data on mount
+    const loadDbData = async () => {
+      const loadedMaster = await DatabaseService.getMasterItems();
+      setMasterItems(loadedMaster);
+
+      const loadedStock = await DatabaseService.getStockItems();
+      setItems(loadedStock);
+    };
+    loadDbData();
+  }, []);
+
+  const handleAddMasterItem = async (e) => {
     e.preventDefault();
-    if(newMasterItemName.trim() && !masterItems.includes(newMasterItemName.trim())) {
-      const updated = [...masterItems, newMasterItemName.trim()];
+    if (newMasterItemName.trim() && !masterItems.includes(newMasterItemName.trim())) {
+      const updated = await DatabaseService.addMasterItem(newMasterItemName.trim());
       setMasterItems(updated);
-      localStorage.setItem('kpn_master_items', JSON.stringify(updated));
       setItemName(newMasterItemName.trim());
       setNewMasterItemName('');
       setShowAddMasterModal(false);
@@ -53,24 +50,29 @@ const Dashboard = () => {
 
   const handleLogout = () => navigate('/login');
 
-  const handleAddItem = (e) => {
+  const handleAddItem = async (e) => {
     e.preventDefault();
     if (!itemName.trim() || !quantity) return;
 
-    setItems([...items, {
+    const newItems = [...items, {
       id: Date.now(),
       name: itemName,
       size: size,
       quantity: quantity
-    }]);
+    }];
+
+    setItems(newItems);
+    await DatabaseService.saveStockItems(newItems);
 
     setItemName('');
     setQuantity('');
     document.getElementById('itemNameInput')?.focus();
   };
 
-  const removeItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
+  const removeItem = async (id) => {
+    const updated = items.filter(item => item.id !== id);
+    setItems(updated);
+    await DatabaseService.saveStockItems(updated);
   };
 
   const downloadPDF = () => {
@@ -131,20 +133,24 @@ const Dashboard = () => {
 
           {role === 'owner' ? (
             /* ==============================
-               OWNER VIEW
+               OWNER VIEW (DYNAMIC DATABASE DRIVEN)
                ============================== */
             <>
               {/* Stats Card */}
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1, background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', textAlign: 'center', borderLeft: '4px solid #10B981' }}>
                   <Package size={24} color="#10B981" style={{ margin: '0 auto 5px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>0</div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>Total Stock</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>
+                    {items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>Total Stock Items</div>
                 </div>
                 <div style={{ flex: 1, background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', textAlign: 'center', borderLeft: '4px solid #EF4444' }}>
                   <Bell size={24} color="#EF4444" style={{ margin: '0 auto 5px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>0</div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>Low Stock</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>
+                    {items.filter(item => Number(item.quantity) <= 5).length}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>Low Stock Alerts</div>
                 </div>
               </div>
 
@@ -153,24 +159,53 @@ const Dashboard = () => {
                 <div style={{ background: '#FEF2F2', padding: '12px 15px', borderBottom: '1px solid #FEE2E2', color: '#B91C1C', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Bell size={18} /> Low Stock Alerts (Action Required)
                 </div>
-                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  
-                  <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
-                    No low stock items currently.
-                  </div>
-
+                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {items.filter(item => Number(item.quantity) <= 5).length > 0 ? (
+                    items.filter(item => Number(item.quantity) <= 5).map(item => (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff5f5', borderRadius: '8px', borderLeft: '4px solid #EF4444' }}>
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: '#333', fontSize: '14px' }}>{item.name} ({item.size})</div>
+                          <div style={{ fontSize: '12px', color: '#dc2626' }}>Remaining Qty: {item.quantity}</div>
+                        </div>
+                        <button 
+                          onClick={() => handleOrder(item.name)} 
+                          style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          Reorder
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+                      No low stock items currently. All inventory levels healthy!
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* General Stock List */}
               <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                 <div style={{ background: '#F3F4F6', padding: '12px 15px', borderBottom: '1px solid #E5E7EB', color: '#374151', fontWeight: 'bold' }}>
-                  Current Available Stock
+                  Current Database Stock ({items.length} Unique Items)
                 </div>
                 <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
-                    Stock is currently zero.
-                  </div>
+                  {items.length > 0 ? (
+                    items.map((item, idx) => (
+                      <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                        </div>
+                        <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
+                          Qty: {item.quantity}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+                      No items in database yet. Worker will add items to populate stock.
+                    </div>
+                  )}
                 </div>
               </div>
             </>

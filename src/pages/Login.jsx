@@ -4,6 +4,8 @@ import { QrCode, Mail, Lock, ArrowRight } from 'lucide-react';
 import ScannerModal from '../components/ScannerModal';
 import './Login.css';
 
+import { DatabaseService } from '../services/db';
+
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
@@ -22,36 +24,36 @@ const Login = () => {
     }, 500);
   };
 
-  const handleAuth = (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    const users = JSON.parse(localStorage.getItem('users')) || {
-      'worker@kpntraders.com': { password: 'worker123', role: 'worker' },
-      'owner@kpntraders.com': { password: 'owner123', role: 'owner' }
-    };
+    try {
+      const users = await DatabaseService.getUsers();
 
-    if (isLogin) {
-      // Login logic
-      const user = users[email];
-      if (user && user.password === password && user.role === role) {
-        navigate('/dashboard', { state: { role: user.role } });
+      if (isLogin) {
+        // Login logic
+        const user = users[email];
+        if (user && user.password === password && user.role === role) {
+          navigate('/dashboard', { state: { role: user.role } });
+        } else {
+          setError('Invalid Email, Password or Role mismatch!');
+        }
       } else {
-        setError('Invalid Email, Password or Role mismatch!');
+        // Sign Up logic
+        if (users[email]) {
+          setError('Email already exists. Please login.');
+        } else {
+          await DatabaseService.saveUser(email, { password, role });
+          setSuccess('Account created successfully! You can now login.');
+          setIsLogin(true);
+          setEmail('');
+          setPassword('');
+        }
       }
-    } else {
-      // Sign Up logic
-      if (users[email]) {
-        setError('Email already exists. Please login.');
-      } else {
-        users[email] = { password, role };
-        localStorage.setItem('users', JSON.stringify(users));
-        setSuccess('Account created successfully! You can now login.');
-        setIsLogin(true);
-        setEmail('');
-        setPassword('');
-      }
+    } catch (err) {
+      setError('Database error: Unable to authenticate.');
     }
   };
 
