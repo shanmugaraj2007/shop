@@ -15,7 +15,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [forgotStep, setForgotStep] = useState(1); // 1: Email, 2: New Password
+  const [forgotStep, setForgotStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
+  const [otp, setOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const navigate = useNavigate();
 
   const handleScanSuccess = (decodedText) => {
@@ -48,17 +50,30 @@ const Login = () => {
           if (!users[email]) {
             setError('Email not found. Please register first.');
           } else {
-            setSuccess(`Email ${email} verified. Please enter a new password.`);
+            const mockOtp = Math.floor(1000 + Math.random() * 9000).toString(); // generate 4-digit OTP
+            setGeneratedOtp(mockOtp);
+            // Simulate sending email:
+            alert(`Simulation: OTP sent to ${email} is ${mockOtp}`);
+            setSuccess(`OTP sent to ${email}. Please check your inbox.`);
             setForgotStep(2);
           }
           return;
-        } else {
+        } else if (forgotStep === 2) {
+          if (otp !== generatedOtp) {
+            setError('Invalid OTP. Please try again.');
+          } else {
+            setSuccess('OTP verified successfully. Please enter a new password.');
+            setForgotStep(3);
+          }
+          return;
+        } else if (forgotStep === 3) {
           // Update password keeping the same role
           const userRole = users[email].role;
           await DatabaseService.saveUser(email, { password, role: userRole });
           setSuccess('Password updated successfully! You can now login.');
           setAuthMode('login');
           setForgotStep(1);
+          setOtp('');
           setPassword('');
         }
       }
@@ -92,11 +107,27 @@ const Login = () => {
               className="input-field with-icon" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={authMode === 'forgot' && forgotStep === 2}
+              disabled={authMode === 'forgot' && forgotStep > 1}
               required 
             />
           </div>
-          {!(authMode === 'forgot' && forgotStep === 1) && (
+
+          {authMode === 'forgot' && forgotStep === 2 && (
+            <div className="input-group">
+              <Lock className="input-icon" size={20} />
+              <input 
+                type="text" 
+                placeholder="Enter 4-digit OTP" 
+                className="input-field with-icon" 
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                maxLength={4}
+                required 
+              />
+            </div>
+          )}
+
+          {(!(authMode === 'forgot') || (authMode === 'forgot' && forgotStep === 3)) && (
             <div className="input-group">
               <Lock className="input-icon" size={20} />
               <input 
@@ -114,7 +145,7 @@ const Login = () => {
             <div style={{ textAlign: 'right', marginBottom: '15px' }}>
               <button 
                 type="button" 
-                onClick={() => { setAuthMode('forgot'); setError(''); setSuccess(''); setForgotStep(1); }}
+                onClick={() => { setAuthMode('forgot'); setError(''); setSuccess(''); setForgotStep(1); setOtp(''); }}
                 style={{ background: 'none', border: 'none', color: '#3498db', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 Forgot Password?
@@ -123,7 +154,7 @@ const Login = () => {
           )}
 
           <button type="submit" className="btn btn-secondary login-btn" style={{ width: '100%', marginTop: '10px' }}>
-            {authMode === 'login' ? 'Login Manually' : (authMode === 'forgot' && forgotStep === 1) ? 'Verify Email' : 'Change Password'}
+            {authMode === 'login' ? 'Login Manually' : (authMode === 'forgot' && forgotStep === 1) ? 'Send OTP' : (authMode === 'forgot' && forgotStep === 2) ? 'Verify OTP' : 'Change Password'}
             <ArrowRight size={18} style={{ marginLeft: '8px' }} />
           </button>
 
@@ -138,7 +169,7 @@ const Login = () => {
             <div style={{ textAlign: 'center', marginTop: '20px' }}>
               <button 
                 type="button" 
-                onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); }}
+                onClick={() => { setAuthMode('login'); setError(''); setSuccess(''); setOtp(''); }}
                 style={{ background: 'none', border: 'none', color: '#3498db', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 Back to Login
