@@ -84,12 +84,10 @@ const Login = () => {
 
   return (
     <div className="login-page animate-fade-in">
-      <div className="login-hero">
-        <div className="logo-circle">
-          <QrCode size={40} color="white" />
-        </div>
-        <h1>KPN TRADERS</h1>
-        <p>Manage your stock seamlessly.</p>
+      <div className="login-hero" style={{ paddingBottom: '20px', paddingTop: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img src="/kpn-logo.png" alt="KPN Traders Logo" style={{ width: '100px', height: '100px', objectFit: 'contain', marginBottom: '10px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+        <h1 style={{ fontSize: '24px', margin: '0 0 5px 0', textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px' }}>KPN TRADERS</h1>
+        <p style={{ opacity: 0.9, fontSize: '14px' }}>Login to your {role === 'worker' ? 'Staff' : 'Owner'} account</p>
       </div>
 
       <div className="login-content">

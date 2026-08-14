@@ -8,9 +8,11 @@ const RoleSelection = () => {
 
   return (
     <div className="login-page animate-fade-in">
-      <div className="login-hero" style={{ paddingBottom: '30px', paddingTop: '60px' }}>
-        <h1>KPN TRADERS</h1>
-        <p>Select your role to continue</p>
+      <div className="login-hero" style={{ paddingBottom: '30px', paddingTop: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img src="/kpn-logo.png" alt="KPN Traders Logo" style={{ width: '160px', height: '160px', objectFit: 'contain', marginBottom: '15px', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.4))' }} />
+        <h1 style={{ fontSize: '30px', margin: '0 0 5px 0', textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px' }}>KPN TRADERS</h1>
+        <p style={{ opacity: 0.9, letterSpacing: '0.5px' }}>Manage your stock seamlessly.</p>
+        <p style={{ marginTop: '30px', fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Select your role to continue</p>
       </div>
       <div className="login-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '40px 20px', marginTop: '20px' }}>
         <button 
