@@ -9,6 +9,16 @@ const About = () => {
         A premium and seamless stock management solution for modern hardware and paint shops.
       </p>
 
+      <div style={{ background: 'white', padding: '20px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', marginBottom: '20px' }}>
+        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '15px', color: '#333' }}>Contact Information</h3>
+        <div style={{ color: '#555', fontSize: '14px', lineHeight: '1.8' }}>
+          <p style={{ margin: '5px 0' }}><strong>Company Name:</strong> KPN TRADERS</p>
+          <p style={{ margin: '5px 0' }}><strong>Owner Name:</strong> KUMAR P</p>
+          <p style={{ margin: '5px 0' }}><strong>Address:</strong> 1/314, DAM ROAD SUNDEKUPPAM, KRISHNAGIRI.</p>
+          <p style={{ margin: '5px 0' }}><strong>Contact No:</strong> 9*******21</p>
+        </div>
+      </div>
+
       <div style={{ background: 'white', padding: '20px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%' }}>
         <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '15px', color: '#333' }}>Features</h3>
         <ul style={{ paddingLeft: '20px', color: '#555', fontSize: '14px', lineHeight: '1.8' }}>
