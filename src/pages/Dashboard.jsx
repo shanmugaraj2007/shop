@@ -62,9 +62,7 @@ const Dashboard = () => {
       quantity: quantity
     };
 
-    const newItems = [...items, newItem];
-    setItems(newItems);
-    await DatabaseService.saveStockItems(newItems);
+    // Add ONLY to temporary session list (not DB yet)
     setSessionItems([...sessionItems, newItem]);
 
     setItemName('');
@@ -73,10 +71,9 @@ const Dashboard = () => {
   };
 
   const removeItem = async (id) => {
-    const updated = items.filter(item => item.id !== id);
-    setItems(updated);
-    await DatabaseService.saveStockItems(updated);
-    setSessionItems(sessionItems.filter(item => item.id !== id));
+    // Only remove from temporary session list
+    const updatedSession = sessionItems.filter(item => item.id !== id);
+    setSessionItems(updatedSession);
   };
 
   const downloadPDF = () => {
@@ -110,9 +107,19 @@ const Dashboard = () => {
     doc.save(`KPN_Traders_${companyName || 'Stock'}.pdf`);
   };
 
-  const completeDocument = () => {
-    downloadPDF();
+  const handleConfirm = async () => {
+    if (sessionItems.length === 0) return;
+    
+    // Save session items to main database stock
+    const newItems = [...items, ...sessionItems];
+    setItems(newItems);
+    await DatabaseService.saveStockItems(newItems);
+
     setSessionItems([]);
+    setCompanyName('Asian Paints');
+    setItemName('');
+    setQuantity('');
+    alert("Stock document confirmed and saved to database successfully!");
   };
 
   const handleOrder = (item) => {
@@ -340,8 +347,8 @@ const Dashboard = () => {
             <button onClick={downloadPDF} style={{ flex: 1, background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Download size={20} /> Download PDF
             </button>
-            <button onClick={completeDocument} style={{ flex: 1, background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <FileText size={20} /> Complete
+            <button onClick={handleConfirm} style={{ flex: 1, background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <FileText size={20} /> Confirm
             </button>
           </div>
         )}
