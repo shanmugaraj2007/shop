@@ -201,27 +201,46 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* General Stock List */}
+              {/* General Stock List (Grouped by Date/Document) */}
               <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                 <div style={{ background: '#F3F4F6', padding: '12px 15px', borderBottom: '1px solid #E5E7EB', color: '#374151', fontWeight: 'bold' }}>
-                  Current Database Stock ({items.length} Unique Items)
+                  Stock Documents by Date
                 </div>
-                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   {items.length > 0 ? (
-                    items.map((item, idx) => (
-                      <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
-                          <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                    Object.entries(
+                      items.reduce((acc, item) => {
+                        // Extract just the date part (YYYY-MM-DD or locale date)
+                        const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
+                        const dateKey = dateObj.toLocaleDateString('en-IN');
+                        if (!acc[dateKey]) acc[dateKey] = [];
+                        acc[dateKey].push(item);
+                        return acc;
+                      }, {})
+                    ).map(([dateStr, dateItems]) => (
+                      <div key={dateStr} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                        <div style={{ background: '#4C1D95', color: '#fff', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Document Date: {dateStr}</span>
+                          <span>{dateItems.length} Items</span>
                         </div>
-                        <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
-                          Qty: {item.quantity}
+                        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
+                          {dateItems.map(item => (
+                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
+                              <div>
+                                <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                              </div>
+                              <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
+                                Qty: {item.quantity}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))
                   ) : (
                     <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
-                      No items in database yet. Worker will add items to populate stock.
+                      No documents available yet.
                     </div>
                   )}
                 </div>
