@@ -24,7 +24,7 @@ const Login = () => {
     console.log(`Scan result: ${decodedText}`);
     setShowScanner(false);
     setTimeout(() => {
-      navigate('/dashboard', { state: { role } }); // Assuming default role for scanner, or you can retrieve it if encoded in QR
+      navigate('/home', { state: { role } }); // Assuming default role for scanner, or you can retrieve it if encoded in QR
     }, 500);
   };
 
@@ -41,7 +41,7 @@ const Login = () => {
         const user = users[email];
         if (user && user.password === password && user.role === role) {
           sessionStorage.setItem('role', user.role);
-          navigate('/dashboard', { state: { role: user.role } });
+          navigate('/home', { state: { role: user.role } });
         } else {
           setError('Invalid Email, Password or Role mismatch!');
         }

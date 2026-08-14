@@ -5,6 +5,10 @@ import { Home, Package, Info } from 'lucide-react';
 const Navbar = () => {
   const location = useLocation();
 
+  if (['/', '/login', '/signup'].includes(location.pathname)) {
+    return null;
+  }
+
   const getStyle = (path) => ({
     flex: 1,
     display: 'flex',
@@ -22,11 +26,11 @@ const Navbar = () => {
 
   return (
     <div style={{ display: 'flex', width: '100%', backgroundColor: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', zIndex: 100 }}>
-      <Link to="/" style={getStyle('/')}>
+      <Link to="/home" style={getStyle('/home')}>
         <Home size={22} style={{ marginBottom: '4px' }} />
         <span style={{ fontSize: '12px' }}>Home</span>
       </Link>
-      <Link to="/dashboard" style={getStyle('/dashboard')}>
+      <Link to="/home" style={getStyle('/home')}>
         <Package size={22} style={{ marginBottom: '4px' }} />
         <span style={{ fontSize: '12px' }}>Stock</span>
       </Link>
