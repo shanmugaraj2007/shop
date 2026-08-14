@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { LogOut, Plus, Download, Trash2, FileText, Building2, Package, Bell, ShoppingCart } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -9,7 +9,12 @@ import './Dashboard.css';
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.state?.role || 'worker'; // get role from login
+  const role = location.state?.role || sessionStorage.getItem('role');
+
+  // Protect route
+  if (!role) {
+    return <Navigate to="/" replace />;
+  }
 
   const [companyName, setCompanyName] = useState('Asian Paints');
   const [items, setItems] = useState([]);
@@ -49,7 +54,10 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = () => navigate('/login');
+  const handleLogout = () => {
+    sessionStorage.removeItem('role');
+    navigate('/login');
+  };
 
   const handleAddItem = async (e) => {
     e.preventDefault();
