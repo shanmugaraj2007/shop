@@ -9,8 +9,7 @@ import { DatabaseService } from '../services/db';
 const Login = () => {
   const [authMode, setAuthMode] = useState('login'); // 'login', 'forgot'
   const [showScanner, setShowScanner] = useState(false);
-  const location = useLocation();
-  const role = location.state?.role || 'worker';
+  // Role will be fetched from DB on successful login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +23,7 @@ const Login = () => {
     console.log(`Scan result: ${decodedText}`);
     setShowScanner(false);
     setTimeout(() => {
-      navigate('/dashboard', { state: { role } });
+      navigate('/dashboard', { state: { role: 'worker' } }); // Assuming default role for scanner, or you can retrieve it if encoded in QR
     }, 500);
   };
 
@@ -39,10 +38,10 @@ const Login = () => {
       if (authMode === 'login') {
         // Login logic
         const user = users[email];
-        if (user && user.password === password && user.role === role) {
+        if (user && user.password === password) {
           navigate('/dashboard', { state: { role: user.role } });
         } else {
-          setError('Invalid Email, Password or Role mismatch!');
+          setError('Invalid Email or Password!');
         }
 
       } else if (authMode === 'forgot') {
@@ -87,7 +86,7 @@ const Login = () => {
       <div className="login-hero" style={{ paddingBottom: '20px', paddingTop: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img src="/kpn-logo.png" alt="KPN Traders Logo" style={{ width: '100px', height: '100px', objectFit: 'contain', marginBottom: '10px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
         <h1 style={{ fontSize: '24px', margin: '0 0 5px 0', textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px' }}>KPN TRADERS</h1>
-        <p style={{ opacity: 0.9, fontSize: '14px' }}>Login to your {role === 'worker' ? 'Staff' : 'Owner'} account</p>
+        <p style={{ opacity: 0.9, fontSize: '14px' }}>Login to your account</p>
       </div>
 
       <div className="login-content">
@@ -158,7 +157,7 @@ const Login = () => {
 
           {authMode === 'login' && (
             <div style={{ textAlign: 'center', marginTop: '20px' }}>
-              <Link to="/signup" state={{ role }} style={{ color: '#3498db', fontSize: '14px', textDecoration: 'none', fontWeight: 'bold' }}>
+              <Link to="/signup" style={{ color: '#3498db', fontSize: '14px', textDecoration: 'none', fontWeight: 'bold' }}>
                 Don't have an account? Create one
               </Link>
             </div>

@@ -7,7 +7,7 @@ import './Login.css';
 const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.state?.role || 'worker';
+  const [role, setRole] = useState('worker');
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +40,7 @@ const Signup = () => {
       <div className="login-hero" style={{ paddingBottom: '20px', paddingTop: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img src="/kpn-logo.png" alt="KPN Traders Logo" style={{ width: '100px', height: '100px', objectFit: 'contain', marginBottom: '10px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
         <h1 style={{ fontSize: '24px', margin: '0 0 5px 0', textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px' }}>Create Account</h1>
-        <p style={{ opacity: 0.9, fontSize: '14px' }}>Register as {role === 'worker' ? 'Staff' : 'Owner'}</p>
+        <p style={{ opacity: 0.9, fontSize: '14px' }}>Register for a new account</p>
       </div>
 
       <div className="login-content">
@@ -69,6 +69,18 @@ const Signup = () => {
               onChange={(e) => setPassword(e.target.value)}
               required 
             />
+          </div>
+          <div className="input-group" style={{ marginBottom: '15px' }}>
+            <UserPlus className="input-icon" size={20} />
+            <select 
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="input-field with-icon"
+              style={{ width: '100%', paddingLeft: '45px', border: 'none', background: 'transparent', outline: 'none' }}
+            >
+              <option value="worker">Staff</option>
+              <option value="owner">Owner</option>
+            </select>
           </div>
 
           <button type="submit" className="btn btn-primary login-btn" style={{ width: '100%', marginTop: '10px' }}>

@@ -126,6 +126,89 @@ const Dashboard = () => {
     alert(`Order placed successfully for: ${item}`);
   };
 
+  const downloadDocumentPDF = (dateStr, dateItems) => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text('KPN TRADERS - STOCK DOCUMENT', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`Date: ${dateStr}`, 14, 35);
+    doc.text(`Total Items: ${dateItems.length}`, 150, 35);
+
+    const tableData = dateItems.map((item, index) => [
+      index + 1,
+      item.name,
+      item.size,
+      item.quantity
+    ]);
+
+    autoTable(doc, {
+      head: [['S.No', 'Item Description', 'Size/Variant', 'Qty']],
+      body: tableData,
+      startY: 45,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 11 }
+    });
+
+    const safeDate = dateStr.replace(/\//g, '-');
+    doc.save(`KPN_Traders_Doc_${safeDate}.pdf`);
+  };
+
+  const renderStockDocuments = () => (
+    <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+      <div style={{ background: '#F3F4F6', padding: '12px 15px', borderBottom: '1px solid #E5E7EB', color: '#374151', fontWeight: 'bold' }}>
+        Stock Documents by Date
+      </div>
+      <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {items.length > 0 ? (
+          Object.entries(
+            items.reduce((acc, item) => {
+              // Extract just the date part (YYYY-MM-DD or locale date)
+              const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
+              const dateKey = dateObj.toLocaleDateString('en-IN');
+              if (!acc[dateKey]) acc[dateKey] = [];
+              acc[dateKey].push(item);
+              return acc;
+            }, {})
+          ).map(([dateStr, dateItems]) => (
+            <div key={dateStr} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ background: '#4C1D95', color: '#fff', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span>Document Date: {dateStr}</span>
+                  <span style={{ fontSize: '11px', opacity: 0.8 }}>{dateItems.length} Items</span>
+                </div>
+                <button 
+                  onClick={() => downloadDocumentPDF(dateStr, dateItems)}
+                  style={{ background: '#fff', color: '#4C1D95', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <Download size={14} /> Download
+                </button>
+              </div>
+              <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
+                {dateItems.map(item => (
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                    </div>
+                    <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
+                      Qty: {item.quantity}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
+            No documents available yet.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="dashboard-page" style={{ background: '#e0e5ec', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
 
@@ -202,49 +285,7 @@ const Dashboard = () => {
               </div>
 
               {/* General Stock List (Grouped by Date/Document) */}
-              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-                <div style={{ background: '#F3F4F6', padding: '12px 15px', borderBottom: '1px solid #E5E7EB', color: '#374151', fontWeight: 'bold' }}>
-                  Stock Documents by Date
-                </div>
-                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {items.length > 0 ? (
-                    Object.entries(
-                      items.reduce((acc, item) => {
-                        // Extract just the date part (YYYY-MM-DD or locale date)
-                        const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
-                        const dateKey = dateObj.toLocaleDateString('en-IN');
-                        if (!acc[dateKey]) acc[dateKey] = [];
-                        acc[dateKey].push(item);
-                        return acc;
-                      }, {})
-                    ).map(([dateStr, dateItems]) => (
-                      <div key={dateStr} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-                        <div style={{ background: '#4C1D95', color: '#fff', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
-                          <span>Document Date: {dateStr}</span>
-                          <span>{dateItems.length} Items</span>
-                        </div>
-                        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
-                          {dateItems.map(item => (
-                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
-                              <div>
-                                <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
-                                <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
-                              </div>
-                              <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
-                                Qty: {item.quantity}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
-                      No documents available yet.
-                    </div>
-                  )}
-                </div>
-              </div>
+              {renderStockDocuments()}
             </>
           ) : (
             /* ==============================
@@ -354,6 +395,14 @@ const Dashboard = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Show previous stock documents if no active session to avoid clutter */}
+              {sessionItems.length === 0 && (
+                <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+                  <h3 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#666', paddingLeft: '5px' }}>Previous Stock Documents</h3>
+                  {renderStockDocuments()}
                 </div>
               )}
             </>
