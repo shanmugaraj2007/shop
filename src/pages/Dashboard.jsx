@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LogOut, Plus, Download, Trash2, FileText, Building2, Package, Bell, ShoppingCart } from 'lucide-react';
+import { LogOut, Plus, Download, Trash2, FileText, Building2, Package, Bell, ShoppingCart, Eye, EyeOff } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DatabaseService } from '../services/db';
@@ -21,6 +21,11 @@ const Dashboard = () => {
   const [sessionItems, setSessionItems] = useState([]); // Tracks items added in the current session/voucher
   
   const [activeTab, setActiveTab] = useState('entry'); // 'entry', 'book', 'create'
+  const [expandedDates, setExpandedDates] = useState({});
+
+  const toggleDate = (dateStr) => {
+    setExpandedDates(prev => ({ ...prev, [dateStr]: !prev[dateStr] }));
+  };
 
   // Form State for worker
   const [itemName, setItemName] = useState('');
@@ -201,27 +206,37 @@ const Dashboard = () => {
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span>Purchase Date: {dateStr}</span>
                           <span style={{ fontSize: '11px', opacity: 0.8 }}>{dateItems.length} Items</span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => toggleDate(dateStr)}
+                            style={{ background: '#fff', color: '#4C1D95', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                          >
+                            {expandedDates[dateStr] ? <><EyeOff size={14} /> Hide</> : <><Eye size={14} /> View</>}
+                          </button>
+                          <button 
+                            onClick={() => downloadDocumentPDF(dateStr, dateItems)}
+                            style={{ background: '#fff', color: '#4C1D95', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                          >
+                            <Download size={14} /> PDF
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => downloadDocumentPDF(dateStr, dateItems)}
-                          style={{ background: '#fff', color: '#4C1D95', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                        >
-                          <Download size={14} /> PDF
-                        </button>
                       </div>
-                      <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
-                        {dateItems.map(item => (
-                          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
-                            <div>
-                              <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                      
+                      {expandedDates[dateStr] && (
+                        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
+                          {dateItems.map(item => (
+                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
+                              <div>
+                                <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                              </div>
+                              <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
+                                Qty: {item.quantity}
+                              </div>
                             </div>
-                            <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
-                              Qty: {item.quantity}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
