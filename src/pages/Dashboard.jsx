@@ -19,6 +19,8 @@ const Dashboard = () => {
   const [companyName, setCompanyName] = useState('Asian Paints');
   const [items, setItems] = useState([]);
   const [sessionItems, setSessionItems] = useState([]); // Tracks items added in the current session/voucher
+  
+  const [activeTab, setActiveTab] = useState('entry'); // 'entry', 'book', 'create'
 
   // Form State for worker
   const [itemName, setItemName] = useState('');
@@ -163,59 +165,77 @@ const Dashboard = () => {
     doc.save(`KPN_Traders_Doc_${safeDate}.pdf`);
   };
 
-  const renderStockDocuments = () => (
-    <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-      <div style={{ background: '#F3F4F6', padding: '12px 15px', borderBottom: '1px solid #E5E7EB', color: '#374151', fontWeight: 'bold' }}>
-        Stock Documents by Date
-      </div>
-      <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {items.length > 0 ? (
-          Object.entries(
-            items.reduce((acc, item) => {
-              // Extract just the date part (YYYY-MM-DD or locale date)
+  const renderAccountBook = () => {
+    // Group by month
+    const groupedByMonth = items.reduce((acc, item) => {
+      const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
+      const monthKey = dateObj.toLocaleString('en-IN', { month: 'long', year: 'numeric' }); // e.g. "August 2026"
+      if (!acc[monthKey]) acc[monthKey] = [];
+      acc[monthKey].push(item);
+      return acc;
+    }, {});
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {Object.keys(groupedByMonth).length > 0 ? (
+          Object.entries(groupedByMonth).map(([monthStr, monthItems]) => {
+            // Group by date within the month
+            const groupedByDate = monthItems.reduce((acc, item) => {
               const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
               const dateKey = dateObj.toLocaleDateString('en-IN');
               if (!acc[dateKey]) acc[dateKey] = [];
               acc[dateKey].push(item);
               return acc;
-            }, {})
-          ).map(([dateStr, dateItems]) => (
-            <div key={dateStr} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-              <div style={{ background: '#4C1D95', color: '#fff', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span>Document Date: {dateStr}</span>
-                  <span style={{ fontSize: '11px', opacity: 0.8 }}>{dateItems.length} Items</span>
+            }, {});
+
+            return (
+              <div key={monthStr} style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                <div style={{ background: '#2c3e50', color: '#fff', padding: '12px 15px', fontWeight: 'bold', fontSize: '15px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{monthStr}</span>
+                  <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '10px' }}>{monthItems.length} Total Entries</span>
                 </div>
-                <button 
-                  onClick={() => downloadDocumentPDF(dateStr, dateItems)}
-                  style={{ background: '#fff', color: '#4C1D95', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                >
-                  <Download size={14} /> Download
-                </button>
-              </div>
-              <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
-                {dateItems.map(item => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {Object.entries(groupedByDate).map(([dateStr, dateItems]) => (
+                    <div key={dateStr} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: '#4C1D95', color: '#fff', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span>Purchase Date: {dateStr}</span>
+                          <span style={{ fontSize: '11px', opacity: 0.8 }}>{dateItems.length} Items</span>
+                        </div>
+                        <button 
+                          onClick={() => downloadDocumentPDF(dateStr, dateItems)}
+                          style={{ background: '#fff', color: '#4C1D95', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                        >
+                          <Download size={14} /> PDF
+                        </button>
+                      </div>
+                      <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb' }}>
+                        {dateItems.map(item => (
+                          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
+                            <div>
+                              <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                            </div>
+                            <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
+                              Qty: {item.quantity}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
-                      Qty: {item.quantity}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
-            No documents available yet.
+          <div style={{ color: '#666', fontSize: '14px', textAlign: 'center', padding: '20px', background: '#fff', borderRadius: '12px' }}>
+            No purchase entries found in Account Book.
           </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="dashboard-page" style={{ background: '#e0e5ec', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
@@ -234,72 +254,31 @@ const Dashboard = () => {
         </div>
 
         <div style={{ padding: '15px', paddingBottom: '100px', flex: 1, overflowY: 'auto' }}>
-
-          {/* Welcome Banner */}
-          <div style={{ marginBottom: '15px', padding: '10px 5px' }}>
-            <h3 style={{ margin: 0, color: '#333', fontSize: '16px' }}>Welcome, {role === 'owner' ? 'Owner' : 'Worker'}</h3>
+          
+          {/* Tabs Navigation */}
+          <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
+            <button 
+              onClick={() => setActiveTab('entry')} 
+              style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'entry' ? '#4C1D95' : 'transparent', color: activeTab === 'entry' ? '#fff' : '#666', transition: '0.2s' }}
+            >
+              Stock Entry
+            </button>
+            <button 
+              onClick={() => setActiveTab('book')} 
+              style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'book' ? '#4C1D95' : 'transparent', color: activeTab === 'book' ? '#fff' : '#666', transition: '0.2s' }}
+            >
+              Account Book
+            </button>
+            <button 
+              onClick={() => setActiveTab('create')} 
+              style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'create' ? '#4C1D95' : 'transparent', color: activeTab === 'create' ? '#fff' : '#666', transition: '0.2s' }}
+            >
+              Create Item
+            </button>
           </div>
 
-          {role === 'owner' ? (
-            /* ==============================
-               OWNER VIEW (DYNAMIC DATABASE DRIVEN)
-               ============================== */
-            <>
-              {/* Stats Card */}
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <div style={{ flex: 1, background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', textAlign: 'center', borderLeft: '4px solid #10B981' }}>
-                  <Package size={24} color="#10B981" style={{ margin: '0 auto 5px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>
-                    {items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>Total Stock Items</div>
-                </div>
-                <div style={{ flex: 1, background: '#fff', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', textAlign: 'center', borderLeft: '4px solid #EF4444' }}>
-                  <Bell size={24} color="#EF4444" style={{ margin: '0 auto 5px' }} />
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>
-                    {items.filter(item => Number(item.quantity) <= 5).length}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>Low Stock Alerts</div>
-                </div>
-              </div>
-
-              {/* Low Stock Alerts */}
-              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: '15px' }}>
-                <div style={{ background: '#FEF2F2', padding: '12px 15px', borderBottom: '1px solid #FEE2E2', color: '#B91C1C', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bell size={18} /> Low Stock Alerts (Action Required)
-                </div>
-                <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {items.filter(item => Number(item.quantity) <= 5).length > 0 ? (
-                    items.filter(item => Number(item.quantity) <= 5).map(item => (
-                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff5f5', borderRadius: '8px', borderLeft: '4px solid #EF4444' }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold', color: '#333', fontSize: '14px' }}>{item.name} ({item.size})</div>
-                          <div style={{ fontSize: '12px', color: '#dc2626' }}>Remaining Qty: {item.quantity}</div>
-                        </div>
-                        <button 
-                          onClick={() => handleOrder(item.name)} 
-                          style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                          Reorder
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ color: '#666', fontSize: '14px', textAlign: 'center' }}>
-                      No low stock items currently. All inventory levels healthy!
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* General Stock List (Grouped by Date/Document) */}
-              {renderStockDocuments()}
-            </>
-          ) : (
-            /* ==============================
-               WORKER VIEW
-               ============================== */
-            <>
+          {activeTab === 'entry' && (
+            <div className="animate-fade-in">
               {/* Brand & Date Card */}
               <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', borderTop: '4px solid #2980b9', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '15px' }}>
                 <div style={{ marginBottom: '10px' }}>
@@ -332,10 +311,10 @@ const Dashboard = () => {
                       <label style={{ fontSize: '13px', color: '#666', fontWeight: 'bold' }}>Item Name / Description</label>
                       <button 
                         type="button" 
-                        onClick={() => setShowAddMasterModal(true)} 
+                        onClick={() => setActiveTab('create')} 
                         style={{ background: 'transparent', border: 'none', color: '#2980b9', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
-                        <Plus size={14} /> Add New
+                        <Plus size={14} /> Add Master
                       </button>
                     </div>
                     <input
@@ -375,7 +354,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <button type="submit" style={{ background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', padding: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '16px', marginTop: '5px' }}>
-                    <Plus size={20} style={{ marginRight: '8px' }} /> Add to List
+                    <Plus size={20} style={{ marginRight: '8px' }} /> Add to Current Entry
                   </button>
                 </form>
               </div>
@@ -405,20 +384,45 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-
-              {/* Show previous stock documents if no active session to avoid clutter */}
-              {sessionItems.length === 0 && (
-                <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-                  <h3 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#666', paddingLeft: '5px' }}>Previous Stock Documents</h3>
-                  {renderStockDocuments()}
-                </div>
-              )}
-            </>
+            </div>
           )}
+
+          {activeTab === 'book' && (
+            <div className="animate-fade-in">
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Account Book (Purchases)</h3>
+              {renderAccountBook()}
+            </div>
+          )}
+
+          {activeTab === 'create' && (
+            <div className="animate-fade-in" style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Create New Product Name</h3>
+              <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>Add a new product to your master list. Once added, it will be available to select during Stock Entry.</p>
+              <form onSubmit={(e) => {
+                handleAddMasterItem(e);
+                alert('Product added successfully!');
+                setActiveTab('entry');
+              }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', color: '#666', marginBottom: '8px', fontWeight: 'bold' }}>New Product Name</label>
+                  <input 
+                    type="text" 
+                    value={newMasterItemName}
+                    onChange={(e) => setNewMasterItemName(e.target.value)}
+                    placeholder="e.g. Asian Paints Royale" 
+                    style={{ width: '100%', padding: '15px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px', outline: 'none', background: '#f9f9f9' }} 
+                    required
+                  />
+                </div>
+                <button type="submit" style={{ width: '100%', padding: '15px', background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px' }}>Save Product</button>
+              </form>
+            </div>
+          )}
+
         </div>
 
-        {/* Fixed Bottom Action Bar for Worker */}
-        {role === 'worker' && sessionItems.length > 0 && (
+        {/* Fixed Bottom Action Bar for Active Session */}
+        {activeTab === 'entry' && sessionItems.length > 0 && (
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', padding: '15px', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
             <button onClick={downloadPDF} style={{ flex: 1, background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Download size={20} /> Download PDF
@@ -430,32 +434,6 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Add Master Item Modal */}
-      {showAddMasterModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Add New Stock Item</h3>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>Add a new item to your master list so you can select it anytime.</p>
-            <form onSubmit={handleAddMasterItem}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '13px', color: '#666', marginBottom: '5px', fontWeight: 'bold' }}>Item Name</label>
-                <input 
-                  type="text" 
-                  value={newMasterItemName}
-                  onChange={(e) => setNewMasterItemName(e.target.value)}
-                  placeholder="e.g. Asian Paints Royale" 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '15px', outline: 'none' }} 
-                  required
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" onClick={() => setShowAddMasterModal(false)} style={{ flex: 1, padding: '12px', background: '#eee', color: '#333', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" style={{ flex: 1, padding: '12px', background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Save Item</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
