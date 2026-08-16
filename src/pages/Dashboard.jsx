@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [sessionItems, setSessionItems] = useState([]); // Tracks items added in the current session/voucher
   
   const [activeTab, setActiveTab] = useState(role === 'owner' ? 'analysis' : 'entry'); // 'entry', 'book', 'create', 'analysis'
+  const [selectedLocation, setSelectedLocation] = useState(role === 'owner' ? 'All' : null);
   const [expandedDates, setExpandedDates] = useState({});
 
   const toggleDate = (dateStr) => {
@@ -74,7 +75,8 @@ const Dashboard = () => {
       id: Date.now(),
       name: itemName,
       size: size,
-      quantity: quantity
+      quantity: quantity,
+      location: selectedLocation || 'Shop'
     };
 
     // Add ONLY to temporary session list (not DB yet)
@@ -171,8 +173,15 @@ const Dashboard = () => {
   };
 
   const renderAccountBook = () => {
+    // Filter items based on location
+    const filteredItems = items.filter(item => {
+      if (role === 'owner' && selectedLocation === 'All') return true;
+      const itemLoc = item.location || 'Shop';
+      return itemLoc === selectedLocation;
+    });
+
     // Group by month
-    const groupedByMonth = items.reduce((acc, item) => {
+    const groupedByMonth = filteredItems.reduce((acc, item) => {
       const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
       const monthKey = dateObj.toLocaleString('en-IN', { month: 'long', year: 'numeric' }); // e.g. "August 2026"
       if (!acc[monthKey]) acc[monthKey] = [];
@@ -229,9 +238,9 @@ const Dashboard = () => {
                             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #f3f4f6' }}>
                               <div>
                                 <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '14px' }}>{item.name}</div>
-                                <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size}</div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>Variant: {item.size} {role === 'owner' && selectedLocation === 'All' ? ` • ${item.location || 'Shop'}` : ''}</div>
                               </div>
-                              <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px' }}>
+                              <div style={{ background: Number(item.quantity) < 5 ? '#fee2e2' : '#e0f2fe', color: Number(item.quantity) < 5 ? '#dc2626' : '#0369a1', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '13px', border: Number(item.quantity) < 5 ? '1px solid #fca5a5' : 'none' }}>
                                 Qty: {item.quantity}
                               </div>
                             </div>
@@ -269,8 +278,36 @@ const Dashboard = () => {
           </button>
         </div>
 
+        {role === 'worker' && selectedLocation === null && (
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+            <h3 style={{ color: '#333', fontSize: '20px', marginBottom: '10px' }}>Select Workplace</h3>
+            <button onClick={() => setSelectedLocation('Shop')} style={{ width: '100%', padding: '20px', fontSize: '18px', fontWeight: 'bold', background: '#4C1D95', color: '#fff', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>🏢 Shop</button>
+            <button onClick={() => setSelectedLocation('Godown')} style={{ width: '100%', padding: '20px', fontSize: '18px', fontWeight: 'bold', background: '#2563EB', color: '#fff', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>🏭 Godown</button>
+          </div>
+        )}
+
+        {((role === 'worker' && selectedLocation !== null) || role === 'owner') && (
         <div style={{ padding: '15px', paddingBottom: '100px', flex: 1, overflowY: 'auto' }}>
           
+          {/* Location Top Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', background: '#fff', padding: '10px 15px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            {role === 'worker' ? (
+              <>
+                <span style={{ fontWeight: 'bold', color: '#333', fontSize: '15px' }}>Location: <span style={{ color: selectedLocation === 'Shop' ? '#4C1D95' : '#2563EB' }}>{selectedLocation}</span></span>
+                <button onClick={() => setSelectedLocation(null)} style={{ background: '#f3f4f6', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold', color: '#666' }}>Change</button>
+              </>
+            ) : (
+              <>
+                <span style={{ fontWeight: 'bold', color: '#333', fontSize: '15px' }}>View Location:</span>
+                <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #ccc', outline: 'none', fontWeight: 'bold', background: '#f9f9f9', color: '#333' }}>
+                  <option value="All">Both (All)</option>
+                  <option value="Shop">Shop</option>
+                  <option value="Godown">Godown</option>
+                </select>
+              </>
+            )}
+          </div>
+
           {/* Tabs Navigation */}
           <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
             {role === 'worker' && (
@@ -409,7 +446,7 @@ const Dashboard = () => {
                           <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#333' }}>{item.name}</div>
                           <div style={{ fontSize: '13px', color: '#777', display: 'flex', gap: '8px', marginTop: '4px' }}>
                             <span style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '4px' }}>{item.size}</span>
-                            <span style={{ background: '#e8f5e9', color: '#2e7d32', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Qty: {item.quantity}</span>
+                            <span style={{ background: Number(item.quantity) < 5 ? '#fee2e2' : '#e8f5e9', color: Number(item.quantity) < 5 ? '#dc2626' : '#2e7d32', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', border: Number(item.quantity) < 5 ? '1px solid #fca5a5' : 'none' }}>Qty: {item.quantity}</span>
                           </div>
                         </div>
                         <button onClick={() => removeItem(item.id)} style={{ background: '#fee', border: 'none', color: '#e74c3c', width: '36px', height: '36px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
@@ -455,10 +492,8 @@ const Dashboard = () => {
             </div>
           )}
 
-        </div>
-
           {activeTab === 'analysis' && role === 'owner' && (
-            <div className="animate-fade-in" style={{ padding: '0 15px 20px 15px' }}>
+            <div className="animate-fade-in" style={{ padding: '0 0 20px 0' }}>
               <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Today's Stock Analysis</h3>
               <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '15px' }}>
                 <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>Items added or updated by staff today.</p>
@@ -466,7 +501,11 @@ const Dashboard = () => {
                   const todayStr = new Date().toLocaleDateString('en-IN');
                   const todayItems = items.filter(item => {
                     const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
-                    return dateObj.toLocaleDateString('en-IN') === todayStr;
+                    const isToday = dateObj.toLocaleDateString('en-IN') === todayStr;
+                    if (!isToday) return false;
+                    if (selectedLocation === 'All') return true;
+                    const itemLoc = item.location || 'Shop';
+                    return itemLoc === selectedLocation;
                   });
 
                   if (todayItems.length === 0) {
@@ -479,10 +518,10 @@ const Dashboard = () => {
                         <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f9fafb', borderLeft: '4px solid #10b981', borderRadius: '8px' }}>
                           <div>
                             <div style={{ fontWeight: 'bold', color: '#111827', fontSize: '15px' }}>{item.name}</div>
-                            <div style={{ fontSize: '13px', color: '#6b7280' }}>Variant: {item.size}</div>
+                            <div style={{ fontSize: '13px', color: '#6b7280' }}>Variant: {item.size} {role === 'owner' && selectedLocation === 'All' ? ` • ${item.location || 'Shop'}` : ''}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ background: '#d1fae5', color: '#065f46', padding: '6px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px' }}>
+                            <div style={{ background: Number(item.quantity) < 5 ? '#fee2e2' : '#d1fae5', color: Number(item.quantity) < 5 ? '#dc2626' : '#065f46', padding: '6px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', border: Number(item.quantity) < 5 ? '1px solid #fca5a5' : 'none' }}>
                               +{item.quantity} Qty
                             </div>
                             <button 
@@ -500,6 +539,9 @@ const Dashboard = () => {
               </div>
             </div>
           )}
+
+        </div>
+        )}
 
         {/* Fixed Bottom Action Bar for Active Session */}
         {activeTab === 'entry' && role === 'worker' && sessionItems.length > 0 && (
