@@ -20,7 +20,7 @@ const Dashboard = () => {
   const [items, setItems] = useState([]);
   const [sessionItems, setSessionItems] = useState([]); // Tracks items added in the current session/voucher
   
-  const [activeTab, setActiveTab] = useState('entry'); // 'entry', 'book', 'create'
+  const [activeTab, setActiveTab] = useState(role === 'owner' ? 'analysis' : 'entry'); // 'entry', 'book', 'create', 'analysis'
   const [expandedDates, setExpandedDates] = useState({});
 
   const toggleDate = (dateStr) => {
@@ -272,27 +272,47 @@ const Dashboard = () => {
           
           {/* Tabs Navigation */}
           <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
-            <button 
-              onClick={() => setActiveTab('entry')} 
-              style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'entry' ? '#4C1D95' : 'transparent', color: activeTab === 'entry' ? '#fff' : '#666', transition: '0.2s' }}
-            >
-              Stock Entry
-            </button>
-            <button 
-              onClick={() => setActiveTab('book')} 
-              style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'book' ? '#4C1D95' : 'transparent', color: activeTab === 'book' ? '#fff' : '#666', transition: '0.2s' }}
-            >
-              Account Book
-            </button>
-            <button 
-              onClick={() => setActiveTab('create')} 
-              style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'create' ? '#4C1D95' : 'transparent', color: activeTab === 'create' ? '#fff' : '#666', transition: '0.2s' }}
-            >
-              Create Item
-            </button>
+            {role === 'worker' && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('entry')} 
+                  style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'entry' ? '#4C1D95' : 'transparent', color: activeTab === 'entry' ? '#fff' : '#666', transition: '0.2s' }}
+                >
+                  Stock Entry
+                </button>
+                <button 
+                  onClick={() => setActiveTab('book')} 
+                  style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'book' ? '#4C1D95' : 'transparent', color: activeTab === 'book' ? '#fff' : '#666', transition: '0.2s' }}
+                >
+                  Account Book
+                </button>
+                <button 
+                  onClick={() => setActiveTab('create')} 
+                  style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'create' ? '#4C1D95' : 'transparent', color: activeTab === 'create' ? '#fff' : '#666', transition: '0.2s' }}
+                >
+                  Create Item
+                </button>
+              </>
+            )}
+            {role === 'owner' && (
+              <>
+                <button 
+                  onClick={() => setActiveTab('analysis')} 
+                  style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'analysis' ? '#d97706' : 'transparent', color: activeTab === 'analysis' ? '#fff' : '#666', transition: '0.2s' }}
+                >
+                  Today's Updates
+                </button>
+                <button 
+                  onClick={() => setActiveTab('book')} 
+                  style={{ flex: 1, padding: '12px 5px', fontSize: '13px', fontWeight: 'bold', border: 'none', cursor: 'pointer', background: activeTab === 'book' ? '#d97706' : 'transparent', color: activeTab === 'book' ? '#fff' : '#666', transition: '0.2s' }}
+                >
+                  All History
+                </button>
+              </>
+            )}
           </div>
 
-          {activeTab === 'entry' && (
+          {activeTab === 'entry' && role === 'worker' && (
             <div className="animate-fade-in">
               {/* Brand & Date Card */}
               <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', borderTop: '4px solid #2980b9', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '15px' }}>
@@ -409,7 +429,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {activeTab === 'create' && (
+          {activeTab === 'create' && role === 'worker' && (
             <div className="animate-fade-in" style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
               <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Create New Product Name</h3>
               <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px', lineHeight: '1.5' }}>Add a new product to your master list. Once added, it will be available to select during Stock Entry.</p>
@@ -436,8 +456,52 @@ const Dashboard = () => {
 
         </div>
 
+          {activeTab === 'analysis' && role === 'owner' && (
+            <div className="animate-fade-in" style={{ padding: '0 15px 20px 15px' }}>
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#333' }}>Today's Stock Analysis</h3>
+              <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', padding: '15px' }}>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>Items added or updated by staff today.</p>
+                {(() => {
+                  const todayStr = new Date().toLocaleDateString('en-IN');
+                  const todayItems = items.filter(item => {
+                    const dateObj = item.updatedAt ? new Date(item.updatedAt) : new Date(Number(item.id));
+                    return dateObj.toLocaleDateString('en-IN') === todayStr;
+                  });
+
+                  if (todayItems.length === 0) {
+                    return <div style={{ color: '#888', fontStyle: 'italic', padding: '10px 0' }}>No stock updates today.</div>;
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {todayItems.map((item, idx) => (
+                        <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f9fafb', borderLeft: '4px solid #10b981', borderRadius: '8px' }}>
+                          <div>
+                            <div style={{ fontWeight: 'bold', color: '#111827', fontSize: '15px' }}>{item.name}</div>
+                            <div style={{ fontSize: '13px', color: '#6b7280' }}>Variant: {item.size}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ background: '#d1fae5', color: '#065f46', padding: '6px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px' }}>
+                              +{item.quantity} Qty
+                            </div>
+                            <button 
+                              onClick={() => handleOrder(item.name)} 
+                              style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              Order
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
         {/* Fixed Bottom Action Bar for Active Session */}
-        {activeTab === 'entry' && sessionItems.length > 0 && (
+        {activeTab === 'entry' && role === 'worker' && sessionItems.length > 0 && (
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', padding: '15px', boxShadow: '0 -4px 10px rgba(0,0,0,0.05)', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
             <button onClick={downloadPDF} style={{ flex: 1, background: '#2980b9', color: '#fff', border: 'none', borderRadius: '8px', padding: '15px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <Download size={20} /> Download PDF

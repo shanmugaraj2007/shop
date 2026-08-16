@@ -2,7 +2,62 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  transition: background 0.3s ease;
+}
+
+/* Staff Theme (Default) */
+.login-page.theme-staff {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+}
+
+/* Owner Theme (Premium Dark & Gold) */
+.login-page.theme-owner {
+  background: linear-gradient(135deg, #1f2937 0%, #09090b 100%);
+}
+
+.login-page.theme-owner .login-hero h1 {
+  color: #fbbf24;
+  text-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+}
+
+.login-page.theme-owner .login-content {
+  background: #111827;
+  box-shadow: 0 -4px 30px rgba(251, 191, 36, 0.15);
+  border-top: 1px solid #374151;
+}
+
+.login-page.theme-owner .input-field {
+  background: #1f2937;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+}
+
+.login-page.theme-owner .input-field::placeholder {
+  color: #9ca3af;
+}
+
+.login-page.theme-owner .input-icon {
+  color: #fbbf24;
+}
+
+.login-page.theme-owner .login-btn {
+  background: linear-gradient(to right, #fbbf24, #d97706) !important;
+  color: #000 !important;
+  font-weight: bold;
+  border: none;
+}
+
+.login-page.theme-owner .login-btn:hover {
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+}
+
+.login-page.theme-owner form button[type="button"],
+.login-page.theme-owner form a {
+  color: #fbbf24 !important;
+}
+
+.login-page.theme-owner .login-hero p {
+  color: #e5e7eb;
 }
 
 .login-hero {

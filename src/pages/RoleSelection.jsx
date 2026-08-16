@@ -7,7 +7,7 @@ const RoleSelection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="login-page animate-fade-in">
+    <div className="login-page animate-fade-in theme-staff">
       <div className="login-hero" style={{ paddingBottom: '30px', paddingTop: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img src="/kpn-logo.png" alt="KPN Traders Logo" style={{ width: '160px', height: '160px', objectFit: 'contain', marginBottom: '15px', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.4))' }} />
         <h1 style={{ fontSize: '30px', margin: '0 0 5px 0', textShadow: '0 2px 4px rgba(0,0,0,0.5)', letterSpacing: '1px' }}>KPN TRADERS</h1>

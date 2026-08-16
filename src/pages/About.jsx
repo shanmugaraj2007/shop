@@ -15,7 +15,7 @@ const About = () => {
           <p style={{ margin: '5px 0' }}><strong>Company Name:</strong> KPN TRADERS</p>
           <p style={{ margin: '5px 0' }}><strong>Owner Name:</strong> KUMAR P</p>
           <p style={{ margin: '5px 0' }}><strong>Address:</strong> 1/314, DAM ROAD SUNDEKUPPAM, KRISHNAGIRI.</p>
-          <p style={{ margin: '5px 0' }}><strong>Contact No:</strong> 9*******21</p>
+          <p style={{ margin: '5px 0' }}><strong>Contact No:</strong> 98******91</p>
         </div>
       </div>
 
