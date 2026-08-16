@@ -206,6 +206,7 @@ const Dashboard = () => {
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span>Purchase Date: {dateStr}</span>
                           <span style={{ fontSize: '11px', opacity: 0.8 }}>{dateItems.length} Items</span>
+                        </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button 
                             onClick={() => toggleDate(dateStr)}
