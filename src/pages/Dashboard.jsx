@@ -9,11 +9,11 @@ import './Dashboard.css';
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.state?.role || sessionStorage.getItem('role');
+  const role = sessionStorage.getItem('role');
 
   // Protect route
   if (!role) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   const [companyName, setCompanyName] = useState('Asian Paints');
@@ -64,7 +64,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem('role');
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const handleAddItem = async (e) => {
